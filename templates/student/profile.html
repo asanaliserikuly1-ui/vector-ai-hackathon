@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Профиль — VECTOR{% endblock %}
+{% block content %}
+
+<section class="st-wrap profile-wrapper">
+  <div class="st-card profile-card">
+    <div class="st-head profile-header">
+      <h2>Профиль</h2>
+      <p class="muted profile-sub">
+        <b>{{ student.full_name or "Без имени" }}</b>
+        {% if student.city %} · {{ student.city }}{% endif %}
+        {% if student.speciality %} · {{ student.speciality }}{% endif %}
+      </p>
+    </div>
+
+<div class="profile-metrics">
+
+  <div class="profile-metric">
+    <div class="metric-label">Карьерная цель</div>
+    <div class="metric-value">
+      {{ student.job_intent or "Не указано" }}
+    </div>
+  </div>
+
+  <div class="profile-metric">
+    <div class="metric-label">Формат работы</div>
+    <div class="metric-value">
+      {{ "Удалённо" if student.remote else "Офис / гибрид" }}
+    </div>
+  </div>
+
+  {% if analysis %}
+  <div class="profile-metric accent">
+    <div class="metric-label">Тип личности</div>
+    <div class="metric-value">
+      {{ analysis.personality_type }}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+    <div class="st-box profile-box" style="margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <b>Резюме</b>
+        <a class="btn ghost profile-btn" href="/student/resume">Редактировать</a>
+      </div>
+
+      <div class="muted profile-muted" style="margin-top:8px;">
+        <b>{{ student.resume_title or "Позиция не указана" }}</b><br>
+        {{ student.resume_summary or "Нажми “Редактировать” или “Сгенерировать” в редакторе резюме." }}
+      </div>
+
+      {% if student.resume_contacts %}
+        <div class="muted profile-muted" style="margin-top:8px;">Контакты: {{ student.resume_contacts }}</div>
+      {% endif %}
+
+      <div class="chips profile-chips" style="margin-top:10px;">
+        {% if student.github_url %}<a class="chip profile-chip" href="{{ student.github_url }}" target="_blank">GitHub</a>{% endif %}
+        {% if student.portfolio_url %}<a class="chip profile-chip" href="{{ student.portfolio_url }}" target="_blank">Портфолио</a>{% endif %}
+        {% if student.linkedin_url %}<a class="chip profile-chip" href="{{ student.linkedin_url }}" target="_blank">LinkedIn</a>{% endif %}
+      </div>
+    </div>
+
+    <div class="st-box profile-box" style="margin-top:14px;">
+      <b>Обучение</b>
+
+      {% if student.education_place or student.education_program or student.education_status or student.education_year %}
+        <div class="muted profile-muted" style="margin-top:8px;">
+          {% if student.education_place %}<div><b>{{ student.education_place }}</b></div>{% endif %}
+          {% if student.education_program %}<div>{{ student.education_program }}</div>{% endif %}
+          <div class="chips profile-chips" style="margin-top:8px;">
+            {% if student.education_status %}<span class="chip profile-chip">{{ student.education_status }}</span>{% endif %}
+            {% if student.education_year %}<span class="chip profile-chip">{{ student.education_year }}</span>{% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="muted profile-muted" style="margin-top:8px;">Не заполнено — открой “Редактировать”.</div>
+      {% endif %}
+    </div>
+
+    <div class="st-box profile-box" style="margin-top:14px;">
+      <b>Проекты</b>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+        {% for p in projects %}
+          <div class="st-box profile-subbox profile-box" style="background:rgba(255,255,255,0.03)">
+            <b>{{ p.name }}</b>
+            {% if p.url %}<div><a class="chip profile-chip" href="{{ p.url }}" target="_blank">Ссылка</a></div>{% endif %}
+            {% if p.desc %}<div class="muted profile-muted" style="margin-top:6px;">{{ p.desc }}</div>{% endif %}
+          </div>
+        {% else %}
+          <div class="muted profile-muted">Проектов пока нет — добавь хотя бы 1, это сильный мост к работодателю.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="st-box profile-box" style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <b>Воронка трудоустройства</b>
+        <a class="btn ghost profile-btn" href="/student/applications">Все отклики</a>
+      </div>
+      <div class="chips profile-chips" style="margin-top:10px;">
+        <span class="chip profile-chip">Отправлено: {{ app_stats.sent }}</span>
+        <span class="chip profile-chip">Просмотрено: {{ app_stats.viewed }}</span>
+        <span class="chip profile-chip">Интервью: {{ app_stats.interview }}</span>
+        <span class="chip profile-chip">Отказы: {{ app_stats.rejected }}</span>
+        <span class="chip profile-chip">Найм: {{ app_stats.hired }}</span>
+      </div>
+    </div>
+
+    <div class="st-box profile-box readiness-block" style="margin-top:14px;">
+      <b>Готовность к работе</b>
+      <div class="chips profile-chips" style="margin-top:10px;">
+        <span class="chip profile-chip">Резюме: {{ "✅" if readiness.resume_done else "❌" }}</span>
+        <span class="chip profile-chip">Анализ: {{ "✅" if readiness.analysis_done else "❌" }}</span>
+        <span class="chip profile-chip">Проекты: {{ "✅" if readiness.projects_done else "❌" }}</span>
+        <span class="chip profile-chip">Отклики ≥5: {{ "✅" if readiness.applications_done else "❌" }}</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+      <div class="st-box profile-box">
+        <b>Hard skills</b>
+        <div class="chips profile-chips" style="margin-top:10px;">
+          {% for s in hard %}
+            <span class="chip profile-chip">{{ s.name }} · {{ s.score }}%</span>
+          {% else %}
+            <span class="muted profile-muted">Пока нет</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="st-box profile-box">
+        <b>Soft skills</b>
+        <div class="chips profile-chips" style="margin-top:10px;">
+          {% for s in soft %}
+            <span class="chip profile-chip">{{ s.name }} · {{ s.score }}%</span>
+          {% else %}
+            <span class="muted profile-muted">Пока нет</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ История навыков -->
+    <div class="st-box profile-box" style="margin-top:14px;">
+      <b>История развития навыков</b>
+      <div class="muted profile-muted" style="margin-top:6px;">Сохраняется после каждого AI-анализа.</div>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+        {% for h in history %}
+          <div class="st-box profile-box" style="background:rgba(255,255,255,0.03)">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <b>{{ h.created_at.strftime("%d.%m.%Y %H:%M") }}</b>
+              <span class="chip profile-chip">Тип: {{ h.personality_type }}</span>
+              <span class="muted profile-muted">{{ h.note }}</span>
+            </div>
+            <div class="chips profile-chips" style="margin-top:8px;">
+              {% for s in h.skills[:12] %}
+                <span class="chip profile-chip">{{ s.name }} · {{ s.score }}%</span>
+              {% endfor %}
+            </div>
+          </div>
+        {% else %}
+          <div class="muted profile-muted">Истории пока нет — пройди интервью и нажми “Анализировать”.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ✅ Динамика соответствия рынку -->
+    <div class="st-box profile-box" style="margin-top:14px;">
+      <b>Динамика соответствия рынку</b>
+      <div class="muted profile-muted" style="margin-top:6px;">Показывает прогресс Market Fit после анализов.</div>
+
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+        {% for m in market_history %}
+          <div class="st-box profile-box" style="background:rgba(255,255,255,0.03)">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <b>{{ m.created_at.strftime("%d.%m.%Y %H:%M") }}</b>
+              <span class="chip profile-chip">{{ m.role }}</span>
+              <span class="chip profile-chip">{{ m.percent }}%</span>
+            </div>
+
+            {% if m.missing and m.missing|length %}
+              <div class="muted profile-muted" style="margin-top:8px;">Чего не хватает:</div>
+              <div class="chips profile-chips" style="margin-top:6px;">
+                {% for s in m.missing[:10] %}
+                  <span class="chip profile-chip">{{ s }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="muted profile-muted">Пока нет данных — нажми “Анализировать”.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+      <a class="btn primary profile-btn" href="/student/interview">AI-интервью</a>
+      <a class="btn ghost profile-btn" href="/student/result">Результаты</a>
+      <a class="btn ghost profile-btn" href="/student/vacancies">Вакансии</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

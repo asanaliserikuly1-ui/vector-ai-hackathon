@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="employer-mode">
+
+    <div class="employer-container">
+
+        <span class="employer-label">EMPLOYER MODE</span>
+
+        <h1 class="employer-title">
+            Найдите лучших студентов
+        </h1>
+
+        <p class="employer-subtitle">
+            Вставьте ссылку на вакансию HH, и VECTOR AI подберёт
+            подходящих кандидатов из базы.
+        </p>
+
+        <div class="employer-box">
+            <input type="text" id="hhInput"
+                   placeholder="https://hh.kz/vacancy/12345678">
+            <button type="button" onclick="analyzeVacancy()">
+                Анализировать
+            </button>
+        </div>
+
+        {% if analyses and analyses|length %}
+        <div class="employer-history">
+            <h3>Последние анализы</h3>
+
+            <div class="employer-history-list">
+                {% for a in analyses[:8] %}
+                <a class="history-item" href="/employer/vacancy/{{ a.id }}">
+                    <div class="history-title">{{ a.title }}</div>
+                    <div class="history-meta">
+                        HH ID: {{ a.hh_id }} · {{ a.created_at.strftime("%d.%m.%Y %H:%M") }}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+                <!-- AI ANALYZE OVERLAY -->
+            <div id="aiLoader" class="ai-loader">
+              <div class="ai-loader-content">
+
+                <div class="radar-visual">
+
+                  <div class="radar-circle"></div>
+                  <div class="radar-circle circle-2"></div>
+                  <div class="radar-circle circle-3"></div>
+
+                  <div class="radar-sweep"></div>
+                  <div class="radar-point center"></div>
+
+                  <div class="target t1"></div>
+                  <div class="target t2"></div>
+                  <div class="target t3"></div>
+
+                </div>
+
+                <p class="ai-loader-text">
+                  VECTOR AI анализирует вакансию...
+                </p>
+
+              </div>
+            </div>
+</section>
+
+<script>
+async function analyzeVacancy(){
+
+  const url = document.getElementById("hhInput").value.trim();
+  if (!url) { alert("Введите ссылку"); return; }
+
+  const button = document.querySelector(".employer-box button");
+  const loader = document.getElementById("aiLoader");
+
+  // блокируем кнопку
+  button.disabled = true;
+  button.innerText = "Анализируем...";
+
+  // показываем радар
+  loader.classList.add("active");
+
+  try {
+
+    const response = await fetch("/employer/api/analyze", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({hh_url: url})
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!data.ok) {
+      alert(data.error ? ("Ошибка: " + data.error) : "Ошибка анализа");
+      loader.classList.remove("active");
+      button.disabled = false;
+      button.innerText = "Анализировать";
+      return;
+    }
+
+    // плавное исчезновение
+    loader.style.opacity = "0";
+
+    setTimeout(() => {
+      window.location.href = "/employer/vacancy/" + data.analysis_id;
+    }, 400);
+
+  } catch (err){
+      alert("Ошибка соединения");
+      loader.classList.remove("active");
+      button.disabled = false;
+      button.innerText = "Анализировать";
+  }
+}
+</script>
+
+{% endblock %}

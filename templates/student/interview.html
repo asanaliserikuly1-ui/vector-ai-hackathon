@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Interview — VECTOR AI{% endblock %}
+{% block content %}
+<section class="st-wrap">
+    <div class="st-card">
+        <div class="st-head">
+            <h2>AI интервью</h2>
+            <p class="muted">Короткие вопросы. Отвечай как есть — ИИ построит Skill-DNA.</p>
+        </div>
+
+        <div class="chat" data-st-chat>
+            <div class="chat-log" data-chat-log></div>
+
+            <div class="chat-row">
+                <input class="chat-inp" data-chat-inp placeholder="Напиши ответ...">
+                <button class="btn primary" data-chat-send>Отправить</button>
+            </div>
+
+            <div class="chat-footer">
+                <button class="btn ghost" data-chat-finish>Завершить и анализировать</button>
+                <span class="muted" data-chat-count></span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function(){
+      const root = document.querySelector('[data-st-chat]');
+      if(!root) return;
+
+      const log = root.querySelector('[data-chat-log]');
+      const inp = root.querySelector('[data-chat-inp]');
+      const send = root.querySelector('[data-chat-send]');
+      const finish = root.querySelector('[data-chat-finish]');
+      const count = root.querySelector('[data-chat-count]');
+
+      const MAX_Q = 6;
+      let isAsking = false;
+      let isAnalyzing = false;
+
+      function add(role, text){
+        const div = document.createElement('div');
+        div.className = 'msg ' + (role === 'me' ? 'me' : 'ai');
+        div.textContent = text;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function setDoneUI(done){
+        if(done){
+          send.disabled = true;
+          inp.disabled = true;
+          // кнопку анализа оставляем доступной
+          finish.disabled = false;
+          finish.classList.add('primary'); // если у тебя есть стиль, иначе не мешает
+        }
+      }
+
+      function setBusyAsking(busy){
+        isAsking = busy;
+        send.disabled = busy;
+        inp.disabled = busy;
+      }
+
+      // ✅ загрузка первого/последнего вопроса + счётчик с сервера
+      (async ()=>{
+        try{
+          const res = await fetch('/student/api/interview/state');
+          const data = await res.json();
+          if(data.ok && data.question){
+            add('ai', data.question);
+          }
+          const q = Number(data.q_count || 0);
+          count.textContent = `Вопросов: ${q}/${MAX_Q}`;
+          if(data.done) setDoneUI(true);
+        }catch(e){
+          // если API недоступно — ничего
+        }
+      })();
+
+      async function ask(){
+        if(isAsking || isAnalyzing) return;
+
+        const msg = (inp.value || '').trim();
+        if(!msg) return;
+
+        inp.value = '';
+        add('me', msg);
+
+        setBusyAsking(true);
+
+        try{
+          const res = await fetch('/student/api/interview', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ message: msg })
+          });
+
+          const data = await res.json();
+
+          if(!data.ok){
+            add('ai', 'Ошибка. Попробуй ещё раз.');
+            setBusyAsking(false);
+            return;
+          }
+
+          add('ai', data.answer);
+
+          const q = Number(data.q_count || 0);
+          count.textContent = `Вопросов: ${q}/${MAX_Q}`;
+
+          if(data.done){
+            // ✅ никаких дублей "Готово" на фронте — сервер уже прислал правильный текст
+            setDoneUI(true);
+          }else{
+            setBusyAsking(false);
+          }
+        }catch(e){
+          add('ai', 'Ошибка сети. Попробуй ещё раз.');
+          setBusyAsking(false);
+        }
+      }
+
+      send.addEventListener('click', ask);
+      inp.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter') ask();
+      });
+
+      // ✅ анти-двойной клик + анти-два запроса
+      finish.addEventListener('click', async ()=>{
+        if(isAnalyzing) return;
+        isAnalyzing = true;
+
+        finish.disabled = true;
+        send.disabled = true;
+        inp.disabled = true;
+
+        add('ai','Анализирую профиль…');
+
+        try{
+          const res = await fetch('/student/api/analyze', { method:'POST' });
+          const data = await res.json();
+
+          if(!data.ok){
+            add('ai','Не смог получить анализ.');
+            isAnalyzing = false;
+            finish.disabled = false;
+            return;
+          }
+
+          location.href = '/student/result';
+        }catch(e){
+          add('ai','Ошибка сети. Попробуй ещё раз.');
+          isAnalyzing = false;
+          finish.disabled = false;
+        }
+      });
+    })();
+</script>
+{% endblock %}

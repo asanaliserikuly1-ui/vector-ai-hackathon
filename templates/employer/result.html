@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="employer-result employer-result-pro">
+
+    <div class="st-card">
+        <div class="st-head">
+            <h2>{{ analysis.title }}</h2>
+            <p class="muted">HH ID: {{ analysis.hh_id }} · {{ analysis.created_at.strftime("%d.%m.%Y %H:%M") }}</p>
+        </div>
+
+        <p class="muted">AI выделил ключевые требования:</p>
+
+        <div class="skills-box">
+            {% for skill in skills %}
+            <span class="skill-pill">{{ skill }}</span>
+            {% endfor %}
+        </div>
+
+            <div class="employer-filters-pro">
+
+                <div class="filter-left">
+                    <div class="filter-item">
+                        <span class="filter-label">Мин. совпадение</span>
+                        <div class="range-wrapper">
+                            <input id="minPct" type="number" min="0" max="100" value="0">
+                            <span class="range-suffix">%</span>
+                        </div>
+                    </div>
+
+                    <div class="filter-item">
+                        <label class="toggle-wrapper">
+                            <input id="onlyFav" type="checkbox">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">Только избранные</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button class="apply-button" id="applyBtn" type="button">
+                    Применить фильтр
+                </button>
+
+            </div>
+    </div>
+
+    <div class="st-card" style="margin-top:16px;">
+
+
+        <div id="candidateList"></div>
+
+        <div class="pager" id="pager" style="margin-top:14px; display:none;">
+            <button class="btn ghost" id="prevBtn" type="button">Назад</button>
+            <div class="muted" id="pageInfo"></div>
+            <button class="btn ghost" id="nextBtn" type="button">Вперёд</button>
+        </div>
+    </div>
+
+</section>
+
+<script>
+/*
+  Единый скрипт — замените оба ваших дублирующихся <script> на этот.
+  Добавляет кнопку "Рассмотреть" и модалку с детальной информацией,
+  не трогая остальную логику.
+*/
+
+const ANALYSIS_ID = {{ analysis.id }};
+let state = { page: 0, pages: 0 };
+const candidateList = document.getElementById("candidateList");
+const meta = document.getElementById("meta");
+const pager = document.getElementById("pager");
+const pageInfo = document.getElementById("pageInfo");
+
+// map student_id -> candidate (последний полученный набор)
+const CAND_MAP = new Map();
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+}
+
+/* ---- Modal: создаём если нет ---- */
+function ensureViewModal(){
+  if (document.getElementById("viewModal")) return;
+  const modalWrap = document.createElement("div");
+  modalWrap.id = "viewModal";
+  modalWrap.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;";
+  modalWrap.innerHTML = `
+    <div id="viewModalCard" style="background:#fff;width:700px;max-width:96%;border-radius:12px;padding:22px;position:relative;box-shadow:0 10px 30px rgba(2,6,23,0.2);">
+      <button id="closeViewModal" aria-label="Закрыть" style="position:absolute;right:12px;top:10px;border:none;background:none;font-size:20px;cursor:pointer;">✕</button>
+      <h3 id="modalTitle" style="margin:4px 0 6px 0;"></h3>
+      <p id="modalSubtitle" class="muted" style="margin:0 0 12px 0;"></p>
+      <div id="modalBody" style="max-height:56vh;overflow:auto;line-height:1.5;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+        <button id="modalCloseBtn" class="btn ghost">Закрыть</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modalWrap);
+
+  const closeButtons = [modalWrap.querySelector("#closeViewModal"), modalWrap.querySelector("#modalCloseBtn")];
+  closeButtons.forEach(b => b && b.addEventListener("click", () => { hideModal(); }));
+
+  modalWrap.addEventListener("click", (e) => {
+    if (e.target === modalWrap) hideModal();
+  });
+
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideModal(); });
+
+  function hideModal(){
+    modalWrap.style.display = "none";
+    const mb = document.getElementById("modalBody");
+    if (mb) mb.innerHTML = "";
+  }
+}
+
+function showModal({ title = "", subtitle = "", html = "" } = {}){
+  ensureViewModal();
+  const wrap = document.getElementById("viewModal");
+  if (!wrap) return;
+  const titleEl = document.getElementById("modalTitle");
+  const subtitleEl = document.getElementById("modalSubtitle");
+  const bodyEl = document.getElementById("modalBody");
+  if (titleEl) titleEl.textContent = title;
+  if (subtitleEl) subtitleEl.textContent = subtitle;
+  if (bodyEl) bodyEl.innerHTML = html || "";
+  wrap.style.display = "flex";
+}
+
+/* ---- Token helper for partial matches (used in original script elsewhere) ---- */
+function _token_set(s){
+  if (!s) return new Set();
+  return new Set(String(s).split(/\s+|[^\w+#]+/).filter(Boolean));
+}
+
+/* ---- Основной fetch и рендер ---- */
+async function fetchCandidates(){
+  if (!candidateList) return;
+
+  const minInput = document.getElementById("minPct");
+  const favInput = document.getElementById("onlyFav");
+  const min = Number(minInput ? minInput.value : 0) || 0;
+  const fav = favInput && favInput.checked ? "1" : "";
+
+  const params = new URLSearchParams({
+    analysis_id: String(ANALYSIS_ID),
+    min: String(Math.max(0, Math.min(100, min))),
+    page: String(state.page),
+    per_page: "20"
+  });
+  if (fav) params.set("fav", fav);
+
+  let res;
+  try {
+    res = await fetch("/employer/api/match?" + params.toString());
+  } catch (err) {
+    candidateList.innerHTML = "<p class='muted'>Ошибка сети при запросе кандидатов</p>";
+    return;
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!data.ok){
+    candidateList.innerHTML = "<p class='muted'>Ошибка сопоставления</p>";
+    return;
+  }
+
+  state.pages = data.pages || 0;
+  if (meta) meta.textContent = `Найдено: ${data.total}`;
+  if (pager) pager.style.display = (state.pages > 1) ? "flex" : "none";
+  if (pageInfo) pageInfo.textContent = `Страница ${Math.max(1, (data.page || 0) + 1)} из ${Math.max(1, state.pages)}`;
+
+  const candidates = data.candidates || [];
+  if (!candidates.length){
+    candidateList.innerHTML = "<p class='muted'>Пока нет кандидатов</p>";
+    return;
+  }
+
+  CAND_MAP.clear();
+  for (const c of candidates) CAND_MAP.set(String(c.student_id), c);
+
+  const R = 42;
+  const CIRC = Math.round(2 * Math.PI * R);
+
+  const html = candidates.map(c => {
+    const pct = Math.max(0, Math.min(100, Number(c.percent) || 0));
+    const dashOffset = Math.round(CIRC - (CIRC * pct / 100));
+
+    // ✅ Если города нет — не показываем строку вообще (без "—")
+    const cityText = c.city ? esc(c.city) : "";
+    const subline = cityText
+      ? `<span class="muted" style="font-size:13px;">${cityText}${c.remote ? " · удалённо" : ""}</span>`
+      : (c.remote ? `<span class="muted" style="font-size:13px;">удалённо</span>` : "");
+
+    return `
+      <div class="candidate-card" data-student-row="${c.student_id}" style="padding:12px;border-bottom:1px solid #eee;">
+        <div class="candidate-main" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+
+          <div style="flex:1 1 0; min-width:0;">
+            <div class="candidate-name" style="display:flex;flex-direction:column;gap:6px;">
+              <strong style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">${esc(c.name)}</strong>
+              ${subline}
+            </div>
+
+            <div class="candidate-actions" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn ghost mini" data-fav="${c.favorite ? 0 : 1}" data-student="${c.student_id}">
+                ${c.favorite ? "★ Избранное" : "☆ В избранное"}
+              </button>
+
+              <button class="btn ghost mini" data-note data-student="${c.student_id}" data-noteval="${esc(c.note || "")}">
+                Заметка
+              </button>
+
+              <button class="btn primary mini" data-view="${c.student_id}" data-name="${esc(c.name)}" data-percent="${pct}">
+                Рассмотреть
+              </button>
+            </div>
+          </div>
+
+          <div class="candidate-score" style="flex:0 0 84px;display:flex;align-items:center;justify-content:center;">
+            <div class="circle-progress" data-percent="${pct}" aria-hidden="true" style="width:64px;height:64px;position:relative;display:inline-block;">
+              <svg viewBox="0 0 100 100" width="64" height="64" style="transform:rotate(-90deg);display:block;">
+                <circle class="circle-bg" cx="50" cy="50" r="${R}" fill="none" stroke-width="8" stroke="#eee"></circle>
+                <circle class="circle-fill" cx="50" cy="50" r="${R}" fill="none" stroke-width="8"
+                        stroke-dasharray="${CIRC}" stroke-dashoffset="${dashOffset}" stroke="#0f172a"></circle>
+              </svg>
+              <span class="circle-text" aria-label="Совпадение ${pct}%" style="position:absolute;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:700;">
+                ${pct}%
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        ${c.note ? `<div class="candidate-note muted" style="margin-top:10px;">${esc(c.note)}</div>` : ""}
+      </div>
+    `;
+  }).join("");
+
+  candidateList.innerHTML = html;
+}
+
+/* ---- Event handlers (favorites, notes, view) ---- */
+document.addEventListener("click", async (e) => {
+  // favorite
+  const favBtn = e.target.closest("[data-fav]");
+  if (favBtn){
+    const studentId = Number(favBtn.getAttribute("data-student"));
+    const favorite = Boolean(Number(favBtn.getAttribute("data-fav")));
+    try {
+      const res = await fetch("/employer/api/candidate/favorite", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ analysis_id: ANALYSIS_ID, student_id: studentId, favorite })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok) fetchCandidates();
+    } catch (err) {
+      console.error("favorite error", err);
+    }
+    return;
+  }
+
+  // note
+  const noteBtn = e.target.closest("[data-note]");
+  if (noteBtn){
+    const studentId = Number(noteBtn.getAttribute("data-student"));
+    const current = noteBtn.getAttribute("data-noteval") || "";
+    const notePrompt = prompt("Заметка (для себя):", current);
+    if (notePrompt === null) return; // отмена
+    const note = notePrompt;
+
+    try {
+      const res = await fetch("/employer/api/candidate/note", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ analysis_id: ANALYSIS_ID, student_id: studentId, note })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!data.ok) alert("Не удалось сохранить заметку");
+      else fetchCandidates();
+    } catch (err) {
+      console.error("note save error", err);
+      alert("Ошибка при сохранении заметки");
+    }
+    return;
+  }
+
+  // view / рассмотреть
+  const viewBtn = e.target.closest("[data-view]");
+  if (viewBtn){
+    const studentId = String(viewBtn.getAttribute("data-view"));
+    const name = viewBtn.getAttribute("data-name") || "Кандидат";
+    const percent = viewBtn.getAttribute("data-percent") || "";
+
+    ensureViewModal();
+    const baseCandidate = CAND_MAP.get(studentId) || {};
+    const subtitle = percent ? `Совпадение: ${percent}%` : "";
+
+    let quickHtml = "<div class='muted'>Краткая информация</div>";
+    if (baseCandidate && Object.keys(baseCandidate).length){
+      const skillsArr = Array.isArray(baseCandidate.skills)
+        ? baseCandidate.skills
+        : (typeof baseCandidate.skills === "string" ? [baseCandidate.skills] : []);
+      const skillsText = skillsArr.length ? esc(skillsArr.slice(0,6).join(", ")) : "—";
+
+      quickHtml = `
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="flex:1 1 0;">
+            <p style="margin:0;"><strong>Город:</strong> ${esc(baseCandidate.city || "—")}</p>
+            <p style="margin:0;"><strong>Навыки:</strong> ${skillsText}</p>
+          </div>
+        </div>
+      `;
+    } else {
+      quickHtml = "<p class='muted'>Нет локальных данных — загружаем подробности...</p>";
+    }
+
+    showModal({ title: name, subtitle, html: quickHtml });
+
+    try {
+      const url = "/employer/api/candidate/details?analysis_id=" + encodeURIComponent(ANALYSIS_ID) + "&student_id=" + encodeURIComponent(studentId);
+      const resp = await fetch(url);
+      const details = await resp.json().catch(() => ({}));
+
+      if (!details || !details.ok){
+        if (details && typeof details === "object" && Object.keys(details).length){
+          const fieldsHtml = Object.entries(details)
+            .map(([k,v]) => `<p style="margin:6px 0;"><strong>${esc(k)}:</strong> ${esc(typeof v === "string" ? v : JSON.stringify(v))}</p>`)
+            .join("");
+          const bodyEl = document.getElementById("modalBody");
+          if (bodyEl) bodyEl.innerHTML = fieldsHtml;
+        } else {
+          const bodyEl = document.getElementById("modalBody");
+          if (bodyEl) bodyEl.innerHTML = "<p class='muted'>Подробная информация недоступна</p>";
+        }
+        return;
+      }
+
+      const payload = details.data || {};
+      const explanation = payload.explanation || payload.reason || "";
+      const skillsArr = payload.skills || payload.matched || payload.extra_skills || [];
+      const skillsText = Array.isArray(skillsArr)
+        ? skillsArr.map(s => (typeof s === "string" ? s : (s.skill || ""))).filter(Boolean).slice(0,10).join(", ")
+        : (skillsArr ? String(skillsArr) : "—");
+
+      const summary = payload.student && payload.student.summary
+        ? payload.student.summary
+        : (payload.summary || payload.experience || "");
+
+      const contactsObj = payload.student && payload.student.contacts
+        ? payload.student.contacts
+        : payload.contacts || {};
+
+      const contactsHtml = Object.keys(contactsObj).length
+        ? Object.entries(contactsObj).map(([k,v]) => `<div><strong>${esc(k)}:</strong> ${esc(v)}</div>`).join("")
+        : "";
+
+      const cvLink = payload.cv_url
+        ? `<div style="margin-top:8px;"><strong>CV:</strong> <a href="${esc(payload.cv_url)}" target="_blank" rel="noopener">Открыть</a></div>`
+        : "";
+
+      const detailHtml = `
+        ${explanation ? `<div style="margin-bottom:12px;"><strong>Почему подходит:</strong><p style="margin:6px 0 0 0;">${esc(explanation)}</p></div>` : ""}
+        ${skillsText ? `<div style="margin-bottom:12px;"><strong>Навыки:</strong><p style="margin:6px 0 0 0;">${esc(skillsText)}</p></div>` : ""}
+        ${summary ? `<div style="margin-bottom:12px;"><strong>Кратко / опыт:</strong><p style="margin:6px 0 0 0;">${esc(summary)}</p></div>` : ""}
+        ${contactsHtml ? `<div style="margin-bottom:12px;"><strong>Контакты:</strong>${contactsHtml}</div>` : ""}
+        ${cvLink}
+      `;
+
+      const bodyEl = document.getElementById("modalBody");
+      if (bodyEl) bodyEl.innerHTML = detailHtml || "<p class='muted'>Деталей нет</p>";
+    } catch (err){
+      console.error("view details error", err);
+      const bodyEl = document.getElementById("modalBody");
+      if (bodyEl) bodyEl.innerHTML = "<p class='muted'>Ошибка при загрузке подробностей</p>";
+    }
+
+    return;
+  }
+});
+
+/* ---- Pagination buttons binding ---- */
+const applyBtn = document.getElementById("applyBtn");
+if (applyBtn) applyBtn.addEventListener("click", () => { state.page = 0; fetchCandidates(); });
+
+const prevBtn = document.getElementById("prevBtn");
+if (prevBtn) prevBtn.addEventListener("click", () => { state.page = Math.max(0, state.page - 1); fetchCandidates(); });
+
+const nextBtn = document.getElementById("nextBtn");
+if (nextBtn) nextBtn.addEventListener("click", () => { state.page = Math.min(Math.max(0, state.pages - 1), state.page + 1); fetchCandidates(); });
+
+// initial load
+fetchCandidates();
+</script>
+
+{% endblock %}

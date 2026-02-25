@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% block title %}AI Inclusive Search{% endblock %}
+{% block content %}
+
+<section class="inclusive-page">
+  <div class="inclusive-container">
+
+    <!-- HEADER -->
+    <div class="inclusive-header">
+      <h1 class="inclusive-title">
+        AI-инклюзивный поиск вакансий
+      </h1>
+      <p class="inclusive-subtitle">
+        Найдите вакансии, учитывающие ваши особенности и условия доступности
+      </p>
+    </div>
+
+    <div style="margin-top:14px;">
+      <a class="btn primary" href="/student/site2" target="_blank" rel="noopener">Открыть новый интерфейс (site2.0)</a>
+      <div class="muted" style="margin-top:8px;">Откроется Next.js (по умолчанию http://127.0.0.1:3000). Можно изменить через переменную INCLUSIVE_URL.</div>
+    </div>
+
+
+    <!-- SEARCH BLOCK -->
+    <div class="inclusive-search-block">
+      <div class="inclusive-search">
+        <input id="incQuery"
+               class="inclusive-input"
+               placeholder="Профессия или ключевое слово...">
+        <button id="btnFind"
+                class="inclusive-search-btn">
+          Найти
+        </button>
+      </div>
+    </div>
+
+    <!-- FILTER BLOCK -->
+    <div class="inclusive-filter-block">
+
+      <div class="inclusive-filter-header">
+        <h3>Фильтр по категориям доступности</h3>
+      </div>
+
+      <div class="inclusive-icon-filters">
+
+        <label class="icon-check">
+          <input type="checkbox" id="cat_visually_impaired">
+          <div class="icon-wrapper">
+            <img src="https://cdn-icons-png.flaticon.com/128/15226/15226873.png" alt="">
+          </div>
+          <span>Слабовидящие</span>
+        </label>
+
+        <label class="icon-check">
+          <input type="checkbox" id="cat_hearing_impaired">
+          <div class="icon-wrapper">
+            <img src="https://cdn-icons-png.flaticon.com/128/15871/15871849.png" alt="">
+          </div>
+          <span>Слабослышащие</span>
+        </label>
+
+        <label class="icon-check">
+          <input type="checkbox" id="cat_mobility_access">
+          <div class="icon-wrapper">
+            <img src="https://cdn-icons-png.flaticon.com/128/4395/4395338.png" alt="">
+          </div>
+          <span>Маломобильные</span>
+        </label>
+
+        <label class="icon-check">
+          <input type="checkbox" id="cat_neurodiversity_friendly">
+          <div class="icon-wrapper">
+            <img src="https://img.icons8.com/?size=100&id=XCHfAP4CD6oZ&format=png&color=000000" alt="">
+          </div>
+          <span>Нейродиверситет</span>
+        </label>
+
+        <label class="icon-check">
+          <input type="checkbox" id="cat_junior_friendly">
+          <div class="icon-wrapper">
+            <img src="https://cdn-icons-png.flaticon.com/128/9571/9571690.png" alt="">
+          </div>
+          <span>Без опыта</span>
+        </label>
+
+        <label class="icon-check">
+          <input type="checkbox" id="cat_remote_possible">
+          <div class="icon-wrapper">
+            <img src="https://cdn-icons-png.flaticon.com/128/2067/2067694.png" alt="">
+          </div>
+          <span>Удалённая</span>
+        </label>
+
+        <label class="icon-check">
+          <input type="checkbox" id="cat_flexible_schedule">
+          <div class="icon-wrapper">
+            <img src="https://cdn-icons-png.flaticon.com/128/2837/2837693.png" alt="">
+          </div>
+          <span>Гибкий график</span>
+        </label>
+
+      </div>
+
+    </div>
+
+                <!-- LOGIC BLOCK -->
+                <div class="inclusive-logic-block">
+
+              <div class="logic-select-wrapper">
+                <label>Логика фильтрации</label>
+                <div class="custom-select">
+                  <select id="matchLogic">
+                    <option value="and" selected>
+                      AND — все выбранные категории обязательны
+                    </option>
+                    <option value="or">
+                      OR — достаточно хотя бы одной выбранной
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <label class="logic-toggle">
+                <input type="checkbox" id="allRoles">
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">
+                  Искать по всем ролям (широкий поиск)
+                </span>
+              </label>
+
+            </div>
+
+    </div>
+
+    <!-- RESULTS -->
+    <div class="inclusive-results-wrapper">
+      <div id="incResults"></div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+const btnFind = document.getElementById("btnFind");
+const incQuery = document.getElementById("incQuery");
+const resultsDiv = document.getElementById("incResults");
+
+btnFind.addEventListener("click", runInclusive);
+incQuery.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") runInclusive();
+});
+
+function esc(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function renderLoading() {
+  resultsDiv.innerHTML = `
+    <div class="inclusive-loading">
+        <div class="loader-bar">
+            <div class="loader-progress" style="width:60%"></div>
+        </div>
+        <p>AI анализирует вакансии...</p>
+    </div>
+  `;
+}
+
+function renderEmpty() {
+  resultsDiv.innerHTML = `
+    <div class="inclusive-empty">
+        Ничего не найдено
+    </div>
+  `;
+}
+
+function renderError(msg) {
+  resultsDiv.innerHTML = `
+    <div class="inclusive-error">
+        ${esc(msg)}
+    </div>
+  `;
+}
+
+async function runInclusive() {
+
+  const categories = [
+    "visually_impaired",
+    "hearing_impaired",
+    "mobility_access",
+    "neurodiversity_friendly",
+    "junior_friendly",
+    "remote_possible",
+    "flexible_schedule"
+  ];
+
+  const required_categories = {};
+  categories.forEach(cat => {
+    const el = document.getElementById("cat_" + cat);
+    required_categories[cat] = el ? el.checked : false;
+  });
+
+  const payload = {
+    query: incQuery.value.trim(),
+    required_categories,
+    match_logic: document.getElementById("matchLogic").value || "and",
+    all_roles: document.getElementById("allRoles").checked,
+    llm_depth: 10
+  };
+
+  renderLoading();
+
+  try {
+
+    const response = await fetch("/student/api/inclusive/search", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!data || data.ok !== true) {
+      renderError("Ошибка сервера");
+      return;
+    }
+
+    if (!Array.isArray(data.items) || data.items.length === 0) {
+      renderEmpty();
+      return;
+    }
+
+    const labelMap = {
+      visually_impaired: "Слабовидящие",
+      hearing_impaired: "Слабослышащие",
+      mobility_access: "Маломобильные",
+      neurodiversity_friendly: "Нейродиверситет",
+      junior_friendly: "Без опыта",
+      remote_possible: "Удалённая",
+      flexible_schedule: "Гибкий график"
+    };
+
+    resultsDiv.innerHTML = "";
+
+    data.items.forEach((item, index) => {
+
+      const name = esc(item.name || "Без названия");
+      const employer = esc(item.employer || "");
+      const url = esc(item.url || "#");
+
+      const categoryCount = Number(item.category_true_count) || 0;
+
+      // 🔥 НОВАЯ ЛОГИКА
+      const progressWidth = categoryCount > 0 ? 100 : 0;
+
+      const cats = item.categories || {};
+
+      let catBadges = "";
+      Object.keys(cats).forEach(k => {
+        if (cats[k]) {
+          catBadges += `
+            <span class="inclusive-badge">
+              ${esc(labelMap[k] || k)}
+            </span>
+          `;
+        }
+      });
+
+      if (!catBadges) {
+        catBadges = `<span class="inclusive-muted">
+            Нет явно указанных условий
+          </span>`;
+      }
+
+      const isTop = index === 0 && progressWidth === 100;
+
+      resultsDiv.innerHTML += `
+        <div class="inclusive-result ${isTop ? "top-match" : ""}">
+
+          <div class="inclusive-left">
+            <div class="inclusive-header">
+              <h4>${name}</h4>
+              <span class="inclusive-employer">${employer}</span>
+            </div>
+
+            <div class="inclusive-badges">
+              ${catBadges}
+            </div>
+          </div>
+
+          <div class="inclusive-right">
+
+            <a href="${url}" target="_blank"
+               class="student-btn primary">
+              Открыть
+            </a>
+
+            <div class="inclusive-score">
+              ${progressWidth}%
+            </div>
+
+            <div class="inclusive-progress">
+              <div class="inclusive-progress-fill"
+                   style="width:${progressWidth}%"></div>
+            </div>
+
+            <div class="inclusive-count">
+              Подходящих категорий: ${categoryCount}
+            </div>
+
+          </div>
+
+        </div>
+      `;
+    });
+
+  } catch (err) {
+    renderError("Ошибка запроса: " + err.message);
+  }
+}
+</script>
+
+{% endblock %}

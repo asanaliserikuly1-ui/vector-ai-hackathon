@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+{% block title %}Vacancies — VECTOR AI{% endblock %}
+{% block content %}
+<style>
+
+/* ============================================================
+   VACANCIES PAGE — PREMIUM CLEAN 2026
+   MEGA-REFACTOR (single-file, no HTML changes required)
+   - Variables, utilities, consolidated components
+   - Preserves original look & behaviour
+   ============================================================ */
+
+/* -------------------------
+   THEME VARIABLES
+   ------------------------- */
+:root{
+  /* colors */
+  --bg: #ffffff;
+  --page-bg: #ffffff;
+  --text: #0f172a;
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --accent: #ff6a00;
+  --accent-2: #ff9500;
+  --glass: rgba(255,255,255,0.85);
+  --line: rgba(15,23,42,0.06);
+  --shadow-1: 0 6px 18px rgba(16,24,40,0.04);
+  --shadow-2: 0 20px 50px rgba(16,24,40,0.05);
+  --shadow-3: 0 40px 100px rgba(15,23,42,0.06);
+
+  /* sizing */
+  --container-w: 1100px;
+  --card-radius: 22px;
+  --pill-radius: 999px;
+
+  /* typography */
+  --font-sans: "Didact Gothic", "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-display: "Unbounded", var(--font-sans);
+
+  /* progress */
+  --circle-size: 72px;
+  --circle-th: 7px;
+}
+
+/* -------------------------
+   BASE + RESET
+   ------------------------- */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--page-bg);color:var(--text);font-family:var(--font-sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.muted{color:var(--muted);opacity:1;font-size:14px}
+
+/* -------------------------
+   LAYOUT UTILITIES
+   ------------------------- */
+.container{max-width:var(--container-w);margin:0 auto;padding:0 20px}
+.st-wrap{max-width:var(--container-w);padding:40px 20px 80px;margin:0 auto}
+.st-card{
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:26px;
+  padding:28px;
+  box-shadow:var(--shadow-1),var(--shadow-3);
+}
+
+/* generic small helpers */
+.flex{display:flex}
+.flex-center{display:flex;align-items:center;justify-content:center}
+.gap-12{gap:12px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:10px 14px;border-radius:12px;font-weight:600;
+  cursor:pointer;border:1px solid rgba(0,0,0,0.06);
+  background:var(--bg);color:var(--text);transition:all .2s ease;
+}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:none;box-shadow:0 14px 40px rgba(255,106,0,0.25)}
+.btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06)}
+.btn:hover{transform:translateY(-2px)}
+
+/* -------------------------
+   HEADER (st-head)
+   ------------------------- */
+.st-head h2{font-family:var(--font-display);font-size:28px;margin:0 0 6px;letter-spacing:-0.6px}
+.st-head .muted{font-size:14px;color:var(--muted)}
+
+/* -------------------------
+   SEARCH FORM
+   ------------------------- */
+.st-form{display:flex;gap:12px;align-items:center;margin-top:12px}
+.st-form input{
+  flex:1;height:52px;padding:0 18px;border-radius:16px;border:1px solid #e5e7eb;font-size:15px;
+  transition:box-shadow .25s ease, border-color .25s ease;box-shadow:0 8px 25px rgba(16,24,40,0.04);
+}
+.st-form input:focus{outline:none;border-color:rgba(255,106,0,0.6);box-shadow:0 0 0 3px rgba(255,106,0,0.12),0 14px 40px rgba(16,24,40,0.06)}
+.st-form .btn{height:52px;padding:0 22px;border-radius:16px;font-weight:700}
+
+/* -------------------------
+   CHIPS
+   ------------------------- */
+.chips{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px}
+.chip{
+  padding:8px 14px;border-radius:var(--pill-radius);font-size:13px;font-weight:600;border:1px solid #e5e7eb;background:#f9fafb;
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+.chip:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(16,24,40,0.06)}
+.chip.is-active{background:linear-gradient(135deg,#fff4ed,#ffffff);border-color:rgba(255,106,0,0.4);color:var(--accent)}
+
+/* -------------------------
+   VACANCY LIST
+   ------------------------- */
+.vac-list{display:grid;gap:14px;margin-top:14px}
+
+/* consolidated vac card */
+.vac{
+  display:block;
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:var(--card-radius);
+  padding:20px 22px;
+  transition:transform .25s ease, box-shadow .25s ease;
+  box-shadow:var(--shadow-1),var(--shadow-2);
+  text-decoration:none;color:inherit;
+}
+.vac:hover{transform:translateY(-5px);box-shadow:0 20px 50px rgba(15,23,42,0.08),0 40px 90px rgba(15,23,42,0.08)}
+.vac + .vac{margin-top:6px}
+
+/* TOP ROW */
+/* =========================
+   VAC TOP — CENTERED PRO
+========================= */
+
+/* =========================
+   VAC TOP — CLEAN CENTER
+========================= */
+
+.vac-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;     /* строго центр */
+  gap:24px;
+  margin-bottom:12px;
+}
+
+.vac-left{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.vac-title{
+  font-size:18px;
+  font-weight:800;
+  color:var(--text);
+  margin:0 0 4px;
+}
+
+.vac-company{
+  font-size:14px;
+  color:var(--muted);
+  line-height:1.2;
+}
+
+/* =========================
+   MATCH AREA — NO FRAME
+========================= */
+
+.vac-match{
+  min-width:100px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+
+  transform: translateY(30px); /* ВМЕСТО margin-top */
+
+  padding:0;
+  background:none;
+  box-shadow:none;
+  border:none;
+}
+
+/* убрать любые hover-эффекты */
+.vac:hover .vac-match{
+  background:none;
+  box-shadow:none;
+}
+
+.vac-match-text{
+  font-size:11px;
+  font-weight:600;
+  color:var(--muted-2);
+  letter-spacing:0.4px;
+  margin:0;
+}
+
+.circle-progress{
+  --size:72px;
+  --thickness:6px;
+
+  width:var(--size);
+  height:var(--size);
+  border-radius:50%;
+  position:relative;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:
+    conic-gradient(
+      var(--circle-color, var(--accent)) calc(var(--value) * 1%),
+      #e5e7eb 0
+    );
+
+  transition:all .6s cubic-bezier(.4,0,.2,1);
+}
+
+.circle-progress::before{
+  content:"";
+  position:absolute;
+  width:calc(var(--size) - var(--thickness)*2);
+  height:calc(var(--size) - var(--thickness)*2);
+  background:var(--bg);
+  border-radius:50%;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,0.04);
+}
+
+.circle-text{
+  position:relative;
+  font-size:15px;
+  font-weight:800;
+  color:var(--circle-color, var(--accent));
+}
+
+
+
+/* -------------------------
+   META ITEM / ICONS
+   ------------------------- */
+.vac-meta{margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--muted)}
+.meta-item{
+  display:inline-flex;align-items:center;gap:8px;background:#f8fafc;padding:8px 14px;border-radius:var(--pill-radius);
+  font-size:13px;font-weight:600;color:#475569;white-space:nowrap;max-width:100%;
+}
+.meta-item.salary{background:#fff4ed;color:var(--accent)}
+.meta-icon{width:16px;height:16px;opacity:.85;display:inline-block;flex-shrink:0}
+
+/* -------------------------
+   CIRCULAR MATCH — CSS CONIC PROGRESS
+   ------------------------- */
+.circle-progress{
+  --size: var(--circle-size);
+  --thickness: var(--circle-th);
+  width: var(--size);height:var(--size);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:conic-gradient(var(--accent) calc(var(--value) * 1%), #f1f5f9 0);
+  position:relative;transition:transform .3s ease, background .6s ease;
+}
+.circle-progress::before{
+  content:"";position:absolute;width:calc(var(--size) - var(--thickness)*2);height:calc(var(--size) - var(--thickness)*2);
+  background:var(--bg);border-radius:50%;
+}
+.circle-text{
+  position:relative;font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.vac:hover .circle-progress{transform:scale(1.08)}
+
+/* smart small variant utility */
+.circle-progress.small{--size:64px}
+
+/* -------------------------
+   PAGINATION
+   ------------------------- */
+.pager{margin-top:30px;display:flex;align-items:center;justify-content:center;gap:20px}
+.pager .btn{border-radius:14px;padding:10px 18px;border:1px solid #e5e7eb;background:#fff}
+.pager .muted{font-weight:600;color:#374151}
+
+/* -------------------------
+   RESPONSIVE
+   ------------------------- */
+@media (max-width:900px){
+  .st-wrap{padding:28px 14px 60px}
+  .st-card{padding:20px;border-radius:20px}
+  .vac-top{flex-direction:column;align-items:flex-start;gap:8px}
+  .vac-match{align-self:flex-end;text-align:right}
+  .circle-progress{margin-left:auto}
+}
+@media (max-width:720px){
+  .st-form{flex-direction:column}
+  .st-form .btn{width:100%}
+  .vac{padding:16px}
+  .circle-progress{--size:56px}
+}
+
+/* -------------------------
+   ACCESSIBILITY + MOTION
+   ------------------------- */
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+}
+
+/* -------------------------
+   LEGACY: keep previously used class names to avoid breaking references
+   (these map to refactored definitions above)
+   ------------------------- */
+.st-wrap{ /* already defined above */ }
+.st-card{ /* already defined above */ }
+.vac-list{ /* already defined above */ }
+.vac-title{ /* already defined above */ }
+.vac-company{ /* already defined above */ }
+
+/* -------------------------
+   NOTES:
+   - To set the % value for a progress circle use inline style: style="--value: 73;"
+   - meta icons: place inline SVG with class="meta-icon" inside .meta-item
+   - If you want an even denser "compact dashboard" look, reduce --card-radius and paddings.
+   ------------------------- */
+</style>
+
+<section class="st-wrap">
+    <div class="st-card">
+        <div class="st-head">
+            <h2>Вакансии HH</h2>
+            <p class="muted">Запрос: <b>{{ q }}</b></p>
+        </div>
+
+        {% if roles and roles|length %}
+        <div class="chips" style="margin-top:10px;">
+            {% for r in roles %}
+            <a class="chip {% if r == q %}is-active{% endif %}" href="/student/vacancies?q={{ r | urlencode }}">{{ r }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form class="st-form" method="get" style="margin-top:14px;">
+            <input name="q" value="{{ q }}" placeholder="Напр: Junior Python">
+            <button class="btn primary" type="submit">Искать</button>
+        </form>
+
+        <div class="vac-list">
+            {% for v in items %}
+            {% set p = match_map.get(v.id|string, 0) %}
+            <a class="vac" href="/student/vacancy/{{ v.id }}">
+
+                <!-- TOP -->
+                <div class="vac-top">
+                    <div class="vac-left">
+                        <div class="vac-title">{{ v.name }}</div>
+                        <div class="vac-company">
+                            {{ v.employer.name if v.employer else '' }}
+                        </div>
+                    </div>
+
+                    <div class="vac-match">
+                        <div class="match-ring">
+                                <div class="circle-progress"
+                                     data-score="{{ p }}"
+                                     style="--value: {{ p }};"
+                                >
+                                <span class="circle-text">{{ p }}%</span>
+                            </div>
+                        </div>
+                        <div class="vac-match-text">AI Match</div>
+                    </div>
+                </div>
+
+                    <!-- META -->
+                    <div class="vac-meta">
+
+                        <span class="meta-item">
+                            <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 21s-6-5.686-6-10a6 6 0 1 1 12 0c0 4.314-6 10-6 10z" stroke-width="1.8"/>
+                                <circle cx="12" cy="11" r="2.5" stroke-width="1.8"/>
+                            </svg>
+                            {{ v.area.name if v.area else 'Удалённо' }}
+                        </span>
+
+                        {% if v.salary %}
+                        <span class="meta-item salary">
+                            <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 1v22M17 5H9a4 4 0 0 0 0 8h6a4 4 0 0 1 0 8H7" stroke-width="1.8"/>
+                            </svg>
+                            {{ v.salary.from or '' }}
+                            {% if v.salary.to %}–{{ v.salary.to }}{% endif %}
+                            {{ v.salary.currency }}
+                        </span>
+                        {% endif %}
+
+                    </div>
+
+            </a>
+            {% else %}
+            <p class="muted">Ничего не найдено.</p>
+            {% endfor %}
+        </div>
+
+        {% if pages and pages > 1 %}
+        <div class="pager" style="margin-top:14px;">
+            <a class="btn ghost" href="/student/vacancies?q={{ q|urlencode }}&page={{ 0 if page<=0 else page-1 }}">Назад</a>
+            <div class="muted">Страница {{ page + 1 }} из {{ pages }}</div>
+            <a class="btn ghost" href="/student/vacancies?q={{ q|urlencode }}&page={{ (pages-1) if page>=pages-1 else page+1 }}">Вперёд</a>
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+{% endblock %}

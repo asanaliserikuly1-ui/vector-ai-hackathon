@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Vacancy — VECTOR AI{% endblock %}
+{% block content %}
+<section class="st-wrap">
+    <div class="st-card">
+        <div class="st-head">
+            <h2>{{ vac.name }}</h2>
+            <p class="muted">{{ vac.employer.name if vac.employer else '' }}</p>
+        </div>
+
+        <!-- MATCH -->
+        <div class="box">
+            <h3>Насколько ты подходишь</h3>
+
+            {% if match_source == "employer" %}
+            <p class="muted">Расчёт по анализу работодателя</p>
+            {% else %}
+            <p class="muted">Работодатель ещё не анализировал эту вакансию</p>
+            {% endif %}
+
+            <div class="skill-item">
+                <div class="skill-top">
+                    <span class="skill-name">Match</span>
+                    <span class="skill-score" data-score="{{ match_percent }}">0%</span>
+                </div>
+                <div class="skill-bar">
+                    <div class="skill-fill" data-score="{{ match_percent }}"></div>
+                </div>
+            </div>
+
+            {% if matched %}
+            <p class="muted" style="margin-top:10px;"><b>Совпало:</b> {{ matched|join(", ") }}</p>
+            {% endif %}
+            {% if missing %}
+            <p class="muted"><b>Не хватает:</b> {{ missing|join(", ") }}</p>
+            {% endif %}
+        </div>
+
+        <div class="box">
+            <h3>Почему подходит</h3>
+            <pre class="explain">{{ explain }}</pre>
+        </div>
+
+        <div class="box">
+            <h3>Описание</h3>
+            <div class="muted">{{ (vac.description or '')|safe }}</div>
+        </div>
+
+        <div class="st-actions">
+            <a class="btn ghost" href="/student/vacancies">← Назад</a>
+
+            {% if vac.alternate_url %}
+            <form method="post" action="/student/vacancy/{{ vac.id }}/apply" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="hh_url" value="{{ vac.alternate_url }}">
+                <input type="hidden" name="vacancy_name" value="{{ vac.name }}">
+                <input type="hidden" name="employer_name" value="{{ vac.employer.name if vac.employer else '' }}">
+                <button class="btn primary" type="submit">Откликнуться</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<script>
+    // если у тебя уже есть общий скрипт анимации прогресс-баров — можешь убрать этот блок
+    document.addEventListener("DOMContentLoaded", () => {
+      const items = document.querySelectorAll('.skill-item');
+      items.forEach((item, i) => {
+        const bar = item.querySelector('.skill-fill');
+        const label = item.querySelector('.skill-score');
+        if (!bar || !label) return;
+
+        const target = parseInt(bar.dataset.score, 10) || 0;
+
+        if (target < 50) bar.classList.add('low');
+        else if (target < 75) bar.classList.add('medium');
+        else bar.classList.add('high');
+
+        bar.style.width = '0%';
+        label.textContent = '0%';
+
+        setTimeout(() => {
+          bar.style.width = target + '%';
+
+          const duration = 900;
+          const start = performance.now();
+          function animate(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const value = Math.round(progress * target);
+            label.textContent = value + '%';
+            if (progress < 1) requestAnimationFrame(animate);
+          }
+          requestAnimationFrame(animate);
+        }, 150 + i * 120);
+      });
+    });
+</script>
+{% endblock %}

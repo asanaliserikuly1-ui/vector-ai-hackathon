@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}LOGIN — VECTOR AI{% endblock %}
+
+{% block content %}
+<div class="va-auth-wrapper">
+    <div class="va-auth-card">
+
+        <h2 class="va-auth-heading">Вход</h2>
+
+        <form method="post" class="va-auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <input
+                class="va-auth-input"
+                name="email"
+                placeholder="Email"
+                required
+            >
+
+            <input
+                class="va-auth-input"
+                name="password"
+                type="password"
+                placeholder="Пароль"
+                required
+            >
+
+            <button class="va-auth-button" type="submit">
+                Войти
+            </button>
+        </form>
+
+                <p class="va-auth-footer">
+                    <a href="/register/student">
+                        <img src="https://cdn-icons-png.flaticon.com/128/4733/4733397.png">
+                        <span>Студент</span>
+                    </a>
+
+                    <a href="/register/employer">
+                        <img src="https://cdn-icons-png.flaticon.com/128/2830/2830571.png">
+                        <span>Работодатель</span>
+                    </a>
+                </p>
+
+    </div>
+</div>
+{% endblock %}

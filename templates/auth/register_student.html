@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Register — VECTOR AI{% endblock %}
+{% block content %}
+<div class="va-register-wrapper">
+    <div class="va-register-card">
+
+        <h2 class="va-register-heading">Регистрация — студент</h2>
+
+        <form method="post" class="va-register-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <input
+                class="va-register-input"
+                name="email"
+                placeholder="Email"
+                required
+            >
+
+            <input
+                class="va-register-input"
+                name="password"
+                type="password"
+                placeholder="Пароль"
+                required
+            >
+
+            <button class="va-register-button" type="submit">
+                Создать
+            </button>
+        </form>
+
+        <p class="va-register-footer">
+            <a href="/login">Уже есть аккаунт? Войти</a>
+        </p>
+
+    </div>
+</div>
+
+{% endblock %}

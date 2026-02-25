@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Register — VECTOR AI{% endblock %}
+{% block content %}
+<div class="va-employer-wrapper">
+    <div class="va-employer-card">
+
+        <h2 class="va-employer-heading">Регистрация — работодатель</h2>
+
+        <form method="post" class="va-employer-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <input
+                class="va-employer-input"
+                name="company"
+                placeholder="Компания (необязательно)"
+            >
+
+            <input
+                class="va-employer-input"
+                name="email"
+                placeholder="Email"
+                required
+            >
+
+            <input
+                class="va-employer-input"
+                name="password"
+                type="password"
+                placeholder="Пароль"
+                required
+            >
+
+            <button class="va-employer-button" type="submit">
+                Создать
+            </button>
+        </form>
+
+        <p class="va-employer-footer">
+            <a href="/login">Уже есть аккаунт? Войти</a>
+        </p>
+
+    </div>
+</div>
+
+{% endblock %}

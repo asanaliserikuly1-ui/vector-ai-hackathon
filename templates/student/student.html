@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Student — VECTOR AI{% endblock %}
+{% block content %}
+<section class="student-hero">
+
+    <div class="student-hero-inner">
+
+        <!-- LEFT CONTENT -->
+        <div class="student-hero-content">
+
+            <span class="student-label">STUDENT MODE</span>
+
+            <h1 class="student-title">
+                Построй карьеру<br>
+                с помощью AI
+            </h1>
+
+            <p class="student-subtitle">
+                VECTOR AI анализирует личность, навыки и подбирает
+                вакансии с HH на основе вашего Skill-DNA профиля.
+            </p>
+
+        <div class="student-buttons">
+
+            <a class="student-btn primary" href="/student/onboarding">
+                <span>Начать AI-анализ</span>
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 12H19M19 12L13 6M19 12L13 18"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+            </a>
+
+            <a class="student-btn secondary" href="/student/vacancies">
+                <span>Смотреть вакансии</span>
+            </a>
+
+        </div>
+
+            <div class="student-features">
+                <div class="student-feature">
+                    <img src="https://www.16personalities.com/static/images/personality-types/avatars/faces/intj-architect-s3-v1-male.svg?v=3" href="https://www.16personalities.com/personality-types">
+                    <span>16 типов личности</span>
+                </div>
+
+                <div class="student-feature">
+                    <img src="{{ url_for('static', filename='images/icons/dna.png') }}">
+                    <span>Skill-DNA анализ</span>
+                </div>
+
+                <div class="student-feature">
+                    <img src="{{ url_for('static', filename='images/icons/api.png') }}">
+                    <span>Вакансии HH</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT IMAGE -->
+        <div class="student-hero-image">
+            <img src="https://i.ibb.co.com/TDZGnQcy/d68430db-c988-4d80-941b-d1b1f540dcc5.png">
+        </div>
+
+    </div>
+
+</section>
+
+<section class="inclusive-dark">
+
+    <div class="inclusive-dark-inner">
+
+        <div class="inclusive-dark-left">
+            <span class="inclusive-dark-label">AI ETHICS</span>
+
+            <h2 class="inclusive-dark-title">
+                Инклюзивный алгоритм<br>
+                без предвзятости
+            </h2>
+
+            <p class="inclusive-dark-text">
+                VECTOR AI анализирует навыки, потенциал и компетенции,
+                исключая влияние пола, возраста и физических ограничений.
+                Мы оцениваем возможности — не ограничения.
+            </p>
+
+            <div class="inclusive-dark-metrics">
+
+                <div class="metric">
+                    <strong>0%</strong>
+                    <span>дискриминации</span>
+                </div>
+
+                <div class="metric">
+                    <strong>100%</strong>
+                    <span>фокус на навыках</span>
+                </div>
+
+                <a href="/student/site2" class="metric metric-cta">
+                    <strong>Подробнее</strong>
+                    <span>о подходе AI</span>
+                </a>
+
+            </div>
+        </div>
+
+        <div class="inclusive-dark-right">
+            <div class="inclusive-orbit">
+                <div class="orbit-center"></div>
+                <div class="orbit-ring"></div>
+                <div class="orbit-ring ring-2"></div>
+                <div class="orbit-dot dot-1"></div>
+                <div class="orbit-dot dot-2"></div>
+                <div class="orbit-dot dot-3"></div>
+            </div>
+        </div>
+
+    </div>
+
+</section>
+{% endblock %}

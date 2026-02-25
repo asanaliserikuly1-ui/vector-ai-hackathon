@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+{% block title %}Резюме — VECTOR{% endblock %}
+{% block content %}
+<style>
+/* -------- theme vars -------- */
+:root{
+  --accent:#ff6a00;
+  --accent-2:#ff9500;
+  --text:#0f172a;
+  --muted:#6b7280;
+  --card-bg:#ffffff;
+  --glass:#fbfdff;
+  --radius-lg:18px;
+  --radius-md:12px;
+  --shadow-1: 0 18px 50px rgba(15,23,42,0.06);
+}
+
+/* wrapper */
+.st-wrap{ max-width:1100px; margin:28px auto; padding:18px; font-family: "Didact Gothic", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:var(--text); }
+
+/* main card */
+.st-card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,250,245,0.96));
+  border:1px solid rgba(15,23,42,0.06);
+  border-radius:26px;
+  padding:20px;
+  box-shadow: var(--shadow-1);
+}
+
+/* header */
+.st-head h2{ margin:0 0 6px; font-family:"Unbounded",sans-serif; font-size:22px; }
+.muted{ color:var(--muted); font-size:14px; }
+
+/* gen button row */
+.gen-row{ display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+.gen-status{ color:var(--muted); font-size:14px; }
+
+/* layout: form + preview */
+.resume-layout{
+  display:grid;
+  grid-template-columns: 1fr 380px;
+  gap:22px;
+  margin-top:18px;
+}
+@media (max-width:980px){ .resume-layout{ grid-template-columns:1fr; } }
+
+/* form */
+.resume-form{ display:flex; flex-direction:column; gap:12px; }
+.form-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media (max-width:720px){ .form-row{ grid-template-columns:1fr; } }
+
+.form-group{ display:flex; flex-direction:column; gap:8px; }
+.form-group label{ font-weight:700; font-size:13px; color:#111827; }
+
+/* inputs */
+.resume-form input[type="text"],
+.resume-form input[type="url"],
+.resume-form textarea{
+  padding:12px 14px;
+  border-radius: var(--radius-md);
+  border:1px solid #e9eef2;
+  background:var(--glass);
+  font-size:15px;
+  outline:none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+.resume-form textarea{ min-height:92px; resize:vertical; }
+
+/* focus */
+.resume-form input:focus, .resume-form textarea:focus{
+  border-color: rgba(255,106,0,0.55);
+  box-shadow: 0 8px 30px rgba(255,122,0,0.08);
+}
+
+/* project card */
+.project-card{
+  margin-top:6px;
+  padding:14px;
+  border-radius:16px;
+  border:1px solid rgba(15,23,42,0.05);
+  background:#fff;
+  box-shadow: 0 10px 30px rgba(15,23,42,0.04);
+}
+
+/* actions row */
+.resume-actions{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+.btn{ cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid rgba(15,23,42,0.08); background:#fff; font-weight:700; }
+.btn.primary{ background: linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border:none; box-shadow: 0 12px 34px rgba(255,106,0,0.16); }
+.btn.ghost{ background:transparent; color:var(--text); }
+@media (max-width:720px){ .resume-actions .btn{ flex:1 1 100%; } }
+
+/* preview */
+.resume-preview{ position:relative; }
+.preview-card{
+  position:sticky; top:20px;
+  padding:20px;
+  border-radius:18px;
+  background: linear-gradient(180deg,#ffffff,#fffaf3);
+  border:1px solid rgba(15,23,42,0.06);
+  box-shadow: 0 30px 80px rgba(15,23,42,0.06);
+  min-height:220px;
+}
+.preview-card h3{ margin:0 0 4px; font-family:"Unbounded",sans-serif; font-size:20px; }
+.preview-role{ margin:0 0 12px; font-weight:800; color:var(--accent); font-size:13px; }
+.preview-summary{ color:var(--muted); line-height:1.6; font-size:14px; }
+
+/* preview contacts / links */
+.preview-links{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.preview-link{ display:inline-flex; gap:10px; align-items:center; padding:8px 12px; border-radius:12px; background:#fff; border:1px solid rgba(15,23,42,0.05); font-weight:700; font-size:13px; color:#111827; box-shadow: 0 8px 24px rgba(16,24,40,0.04); text-decoration:none; }
+
+/* small helper */
+.hint{ font-size:13px; color:var(--muted); }
+
+/* subtle responsive tweaks */
+@media (max-width:480px){
+  .preview-card{ padding:16px; }
+  .preview-links{ gap:6px; }
+}
+</style>
+
+<section class="st-wrap">
+  <div class="st-card">
+    <div class="st-head">
+      <h2>Резюме</h2>
+      <p class="muted">Можно заполнить вручную или сгенерировать и подправить.</p>
+    </div>
+
+    <div class="gen-row" aria-live="polite">
+      <button class="btn ghost" type="button" id="btnGen" aria-controls="genStatus">Сгенерировать резюме</button>
+      <span class="gen-status" id="genStatus"></span>
+    </div>
+
+    <div class="resume-layout" role="region" aria-label="Форма резюме и превью">
+
+      <!-- FORM -->
+      <form method="post" class="resume-form" aria-label="Форма редактирования резюме" onsubmit="return true;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- basic -->
+        <div class="form-group">
+          <label for="full_name">Полное имя</label>
+          <input id="full_name" name="full_name" type="text" value="{{ student.full_name }}" placeholder="Ваше имя">
+          <div class="hint">Покажется в превью</div>
+        </div>
+
+        <div class="form-group">
+          <label for="resume_title">Желаемая позиция</label>
+          <input id="resume_title" name="resume_title" type="text"
+                 value="{{ student.resume_title }}"
+                 placeholder="Напр: Junior Python Developer">
+        </div>
+
+        <div class="form-group">
+          <label for="resume_summary">Коротко о себе</label>
+          <textarea id="resume_summary" name="resume_summary" rows="4"
+                    placeholder="2–4 предложения">{{ student.resume_summary }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="resume_contacts">Контакты</label>
+          <input id="resume_contacts" name="resume_contacts" type="text"
+                 value="{{ student.resume_contacts }}"
+                 placeholder="Тел / Telegram / Email">
+        </div>
+
+        <div class="form-row" aria-label="Ссылки">
+          <div class="form-group">
+            <label for="github_url">GitHub</label>
+            <input id="github_url" name="github_url" type="url" value="{{ student.github_url }}" placeholder="https://github.com/...">
+          </div>
+
+          <div class="form-group">
+            <label for="portfolio_url">Портфолио</label>
+            <input id="portfolio_url" name="portfolio_url" type="url" value="{{ student.portfolio_url }}" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="linkedin_url">LinkedIn (если есть)</label>
+          <input id="linkedin_url" name="linkedin_url" type="url" value="{{ student.linkedin_url }}" placeholder="https://linkedin.com/in/...">
+        </div>
+
+        <!-- education -->
+        <h3 class="section-title" style="margin-top:8px;">Обучение</h3>
+
+        <div class="form-group">
+          <label for="education_place">Где обучаешься / обучался</label>
+          <input id="education_place" name="education_place" value="{{ student.education_place }}" placeholder="Колледж / ВУЗ / школа">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="education_program">Направление / программа</label>
+            <input id="education_program" name="education_program" value="{{ student.education_program }}" placeholder="Информационные системы">
+          </div>
+
+          <div class="form-group">
+            <label for="education_year">Курс / период</label>
+            <input id="education_year" name="education_year" value="{{ student.education_year }}" placeholder="2 курс / 2023–2026">
+          </div>
+        </div>
+
+        <!-- projects -->
+        <h3 class="section-title" style="margin-top:8px;">Проекты</h3>
+
+        {% for p in projects %}
+        <div class="project-card" data-project-index="{{ loop.index }}">
+          <div class="form-group">
+            <label for="proj{{ loop.index }}_name">Название проекта</label>
+            <input id="proj{{ loop.index }}_name" name="proj{{ loop.index }}_name" value="{{ p.name }}" placeholder="Название">
+          </div>
+
+          <div class="form-group">
+            <label for="proj{{ loop.index }}_url">Ссылка</label>
+            <input id="proj{{ loop.index }}_url" name="proj{{ loop.index }}_url" value="{{ p.url }}" placeholder="https://github.com/...">
+          </div>
+
+          <div class="form-group">
+            <label for="proj{{ loop.index }}_desc">Описание</label>
+            <textarea id="proj{{ loop.index }}_desc" name="proj{{ loop.index }}_desc" rows="3" placeholder="Что сделал и какие технологии">{{ p.desc }}</textarea>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="resume-actions" style="margin-top:6px;">
+          <button class="btn primary" type="submit">Сохранить</button>
+          <a class="btn ghost" href="/student/profile" role="link">Назад в профиль</a>
+        </div>
+      </form>
+
+      <!-- PREVIEW -->
+      <aside class="resume-preview" aria-label="Превью резюме">
+        <div class="preview-card" role="article" aria-live="polite">
+          <h3 id="previewName">{{ student.full_name or "Без имени" }}</h3>
+          <p class="preview-role" id="previewTitle">{{ student.resume_title or "Желаемая позиция" }}</p>
+          <p class="preview-summary" id="previewSummary">
+            {{ student.resume_summary or "Коротко о себе — 1–2 предложения." }}
+          </p>
+
+          <div class="preview-links" id="previewLinks">
+            {% if student.resume_contacts %}
+              <a class="preview-link" href="tel:{{ student.resume_contacts|urlencode }}">{{ student.resume_contacts }}</a>
+            {% endif %}
+            {% if student.github_url %}
+              <a class="preview-link" id="previewGit" href="{{ student.github_url }}" target="_blank">GitHub</a>
+            {% endif %}
+            {% if student.portfolio_url %}
+              <a class="preview-link" id="previewPortfolio" href="{{ student.portfolio_url }}" target="_blank">Портфолио</a>
+            {% endif %}
+            {% if student.linkedin_url %}
+              <a class="preview-link" id="previewLinkedin" href="{{ student.linkedin_url }}" target="_blank">LinkedIn</a>
+            {% endif %}
+          </div>
+        </div>
+      </aside>
+
+    </div> <!-- .resume-layout -->
+
+  </div> <!-- .st-card -->
+</section>
+
+<script>
+/* ----------------- Live preview bindings ----------------- */
+(function(){
+  // mapping: inputId -> preview element updater
+  const bindings = [
+    {input:'#full_name', preview:'#previewName', fallback:'Без имени'},
+    {input:'#resume_title', preview:'#previewTitle', fallback:'Желаемая позиция'},
+    {input:'#resume_summary', preview:'#previewSummary', fallback:'Коротко о себе — 1–2 предложения.'},
+  ];
+
+  function setText(sel, text, fallback){
+    const el = document.querySelector(sel);
+    if(!el) return;
+    const v = (text||'').trim();
+    el.textContent = v.length ? v : fallback || '';
+  }
+
+  bindings.forEach(b=>{
+    const input = document.querySelector(b.input);
+    if(!input) return;
+    input.addEventListener('input', e=>{
+      setText(b.preview, e.target.value, b.fallback);
+    });
+    // initialize
+    setText(b.preview, input.value, b.fallback);
+  });
+
+  // contacts & links previews
+  const contactsInput = document.getElementById('resume_contacts');
+  const gitInput = document.getElementById('github_url');
+  const portInput = document.getElementById('portfolio_url');
+  const liInput = document.getElementById('linkedin_url');
+
+  function updateLinks(){
+    const container = document.getElementById('previewLinks');
+    if(!container) return;
+    container.innerHTML = ''; // rebuild
+
+    const makeLink = (href, text) => {
+      const a = document.createElement('a');
+      a.className = 'preview-link';
+      a.href = href;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = text;
+      return a;
+    };
+
+    // contacts (plain text shown, phone/email)
+    const c = (contactsInput && contactsInput.value || '').trim();
+    if(c){
+      const a = document.createElement('div');
+      a.className = 'preview-link';
+      a.textContent = c;
+      container.appendChild(a);
+    }
+
+    if(gitInput && gitInput.value.trim()){
+      container.appendChild(makeLink(gitInput.value.trim(), 'GitHub'));
+    }
+    if(portInput && portInput.value.trim()){
+      container.appendChild(makeLink(portInput.value.trim(), 'Портфолио'));
+    }
+    if(liInput && liInput.value.trim()){
+      container.appendChild(makeLink(liInput.value.trim(), 'LinkedIn'));
+    }
+  }
+
+  [contactsInput, gitInput, portInput, liInput].forEach(el=>{
+    if(!el) return;
+    el.addEventListener('input', updateLinks);
+    // initialize
+    updateLinks();
+  });
+})();
+
+/* ----------------- Generate resume: existing logic, with UI polish ----------------- */
+(function(){
+  const btn = document.getElementById("btnGen");
+  const statusEl = document.getElementById("genStatus");
+  if(!btn) return;
+
+  function setStatus(t){
+    statusEl.textContent = t || '';
+  }
+
+  btn.addEventListener("click", async () => {
+    try{
+      setStatus("Генерирую…");
+      btn.disabled = true;
+      btn.setAttribute('aria-busy','true');
+
+      const r = await fetch("/student/api/resume/generate", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({})
+      });
+
+      if(!r.ok){
+        setStatus("Сервер вернул ошибку: " + r.status);
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        return;
+      }
+
+      const data = await r.json();
+
+      if(!data.ok){
+        setStatus("Ошибка генерации: " + (data.error || "unknown"));
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        return;
+      }
+
+      // fill fields
+      const setIf = (id, value) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.value = value || '';
+        // trigger input event so preview updates
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+
+      setIf('resume_title', data.resume_title);
+      setIf('resume_summary', data.resume_summary);
+      setIf('github_url', data.github_url);
+      setIf('portfolio_url', data.portfolio_url);
+      setIf('linkedin_url', data.linkedin_url);
+      setIf('resume_contacts', data.resume_contacts || '');
+
+      // projects (up to 6 safe)
+      const projs = Array.isArray(data.projects) ? data.projects : [];
+      for(let i=1;i<=6;i++){
+        setIf(`proj${i}_name`, (projs[i-1] && projs[i-1].name) || '');
+        setIf(`proj${i}_url`, (projs[i-1] && projs[i-1].url) || '');
+        setIf(`proj${i}_desc`, (projs[i-1] && projs[i-1].desc) || '');
+      }
+
+      setStatus("Готово ✅ Проверь и нажми «Сохранить»");
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+
+    }catch(err){
+      console.error(err);
+      setStatus("Ошибка: " + (err.message || err));
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+    }
+  });
+})();
+</script>
+{% endblock %}

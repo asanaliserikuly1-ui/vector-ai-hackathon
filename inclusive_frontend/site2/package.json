@@ -1,0 +1,37 @@
+{
+  "name": "inclusive-job-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.2.2",
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "tailwindcss": "^3.3.5",
+    "postcss": "^8.4.31",
+    "autoprefixer": "^10.4.16",
+    "framer-motion": "^10.16.4",
+    "zustand": "^4.4.6",
+    "react-pdf": "^7.5.1",
+    "@types/react-pdf": "^5.0.0",
+    "jspdf": "^2.5.1",
+    "html2canvas": "^1.4.1",
+    "@pbe/react-yandex-maps": "^1.2.1",
+    "lucide-react": "^0.292.0",
+    "react-hot-toast": "^2.4.1",
+    "date-fns": "^2.30.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.51.0",
+    "eslint-config-next": "^14.0.0"
+  }
+}

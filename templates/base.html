@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}VECTOR{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Didact+Gothic&family=Unbounded:wght@200..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700;800&display=swap" rel="stylesheet">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<!-- Шапка -->
+<header class="header">
+    <div class="header-inner">
+
+        <!-- ЛЕВО: ЛОГО -->
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="VECTOR AI">
+        </div>
+
+
+          <nav class="nav" id="nav">
+  <a href="/" class="nav-link">Главная</a>
+
+  {% if not current_user.is_authenticated %}
+    <a href="/student" class="nav-link">Студент</a>
+    <a href="/student/site2" class="nav-link">Инклюзивность</a>
+    <a href="/employer" class="nav-link">Работодатель</a>
+    <a href="/login" class="nav-link login no-indicator">Войти</a>
+
+  {% else %}
+
+    {% if current_user.role == 'student' %}
+      <a href="/student" class="nav-link">Кабинет</a>
+      <a href="/student/site2" class="nav-link">Инклюзивность</a>
+
+      <!-- ✅ Профиль-меню -->
+      <div class="nav-profile">
+        <button type="button" class="nav-profile-btn no-indicator" id="profileBtn"
+                aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu"
+                title="Профиль">
+          <svg class="nav-profile-ico" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"/>
+          </svg>
+        </button>
+
+        <div class="nav-profile-menu" id="profileMenu" role="menu" aria-label="Меню профиля">
+          <a href="/student/profile" role="menuitem">Профиль</a>
+          <a href="/student/applications" role="menuitem">Отклики</a>
+          <a href="/student/market-bridge" role="menuitem">Мост с рынком</a>
+          <div class="nav-profile-sep"></div>
+          <a href="/logout" role="menuitem">Выйти</a>
+        </div>
+      </div>
+
+    {% elif current_user.role == 'employer' %}
+      <a href="/employer" class="nav-link">Кабинет</a>
+      <a href="/student/site2" class="nav-link">Инклюзивность</a>
+      <a href="/logout" class="nav-link login no-indicator">Выйти</a>
+    {% endif %}
+
+  {% endif %}
+
+  <span class="nav-indicator" id="nav-indicator"></span>
+</nav>
+
+
+
+    </div>
+</header>
+
+<!-- Основной контент -->
+<main class="container mt-4">
+    {% block content %}
+    {% endblock %}
+</main>
+
+<footer class="footer">
+    <div class="footer-container">
+
+        <!-- ЛЕВО -->
+        <div class="footer-brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="VECTOR AI">
+            <p>
+                AI-платформа сопоставления талантов и возможностей.
+                Создано в Казахстане.
+            </p>
+        </div>
+
+        <!-- ЦЕНТР -->
+        <div class="footer-links">
+            <div class="footer-column">
+                <h4>Платформа</h4>
+                <a href="/student">Студент</a>
+                <a href="/employer">Работодатель</a>
+                <a href="/">Главная</a>
+            </div>
+
+            <div class="footer-column">
+                <h4>Компания</h4>
+                <a href="#">О проекте</a>
+                <a href="#">Контакты</a>
+                <a href="#">Политика</a>
+            </div>
+        </div>
+
+        <!-- ПРАВО -->
+        <div class="footer-cta">
+            <h4>Начать сейчас</h4>
+            <a href="/student" class="footer-btn">Попробовать бесплатно</a>
+        </div>
+
+    </div>
+
+    <div class="footer-bottom">
+        © 2026 VECTOR AI. Все права защищены.
+    </div>
+</footer>
+
+{% block scripts %}
+{% endblock %}
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const nav = document.getElementById("nav");
+      const links = document.querySelectorAll(".nav-link:not(.no-indicator)");
+      const indicator = document.getElementById("nav-indicator");
+
+      function moveIndicator(element) {
+        if (!element || !indicator) return;
+        const navRect = element.parentElement.getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
+        indicator.style.width = rect.width + "px";
+        indicator.style.left = (rect.left - navRect.left) + "px";
+      }
+
+      const currentPath = window.location.pathname;
+
+      // ✅ Находим "активную" ссылку: сначала точное совпадение,
+      // потом совпадение по префиксу (например /student/* -> /student)
+      function getActiveLink() {
+        // 1) exact match
+        let active = Array.from(links).find(a => a.getAttribute("href") === currentPath);
+        if (active) return active;
+
+        // 2) prefix match for sections
+        const sections = ["/student", "/student/inclusive", "/employer"]; // добавь сюда другие разделы если появятся
+        const section = sections.find(p => currentPath === p || currentPath.startsWith(p + "/"));
+        if (section) {
+          active = Array.from(links).find(a => a.getAttribute("href") === section);
+          if (active) return active;
+        }
+
+        // 3) fallback: home for "/"
+        if (currentPath === "/") {
+          return Array.from(links).find(a => a.getAttribute("href") === "/");
+        }
+
+        return null;
+      }
+
+      const activeLink = getActiveLink();
+      if (activeLink) moveIndicator(activeLink);
+
+      // hover
+      links.forEach(link => {
+        link.addEventListener("mouseenter", () => moveIndicator(link));
+      });
+
+      // when mouse leaves -> back to active
+      nav.addEventListener("mouseleave", () => {
+        const a = getActiveLink();
+        if (a) moveIndicator(a);
+      });
+
+      // если меняется размер окна — пересчитать позицию
+      window.addEventListener("resize", () => {
+        const a = getActiveLink();
+        if (a) moveIndicator(a);
+      });
+    });
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("profileBtn");
+    const menu = document.getElementById("profileMenu");
+    if (!btn || !menu) return;
+
+    function openMenu(){
+      menu.classList.add("is-open");
+      btn.setAttribute("aria-expanded", "true");
+    }
+    function closeMenu(){
+      menu.classList.remove("is-open");
+      btn.setAttribute("aria-expanded", "false");
+    }
+    function toggleMenu(){
+      if (menu.classList.contains("is-open")) closeMenu();
+      else openMenu();
+    }
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    // клик вне меню — закрыть
+    document.addEventListener("click", () => closeMenu());
+
+    // внутри меню — не закрывать при клике (кроме перехода по ссылке)
+    menu.addEventListener("click", (e) => e.stopPropagation());
+
+    // Esc — закрыть
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeMenu();
+    });
+  });
+</script>
+</body>
+</html>

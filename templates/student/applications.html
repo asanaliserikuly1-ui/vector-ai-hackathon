@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Отклики — VECTOR{% endblock %}
+{% block content %}
+<section class="st-wrap">
+  <div class="st-card">
+    <div class="st-head">
+      <h2>Отклики</h2>
+      <p class="muted">Твоя воронка трудоустройства</p>
+    </div>
+
+    <div class="chips" style="margin-top:10px;">
+      <span class="chip">Отправлено: {{ stats.sent }}</span>
+      <span class="chip">Просмотрено: {{ stats.viewed }}</span>
+      <span class="chip">Интервью: {{ stats.interview }}</span>
+      <span class="chip">Отказы: {{ stats.rejected }}</span>
+      <span class="chip">Найм: {{ stats.hired }}</span>
+    </div>
+
+    <div class="st-box" style="margin-top:12px;">
+      {% for r in rows %}
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+          <div>
+            <b>{{ r.vacancy_name or "Вакансия" }}</b>
+            <div class="muted">{{ r.employer_name }} · {{ r.created_at.strftime("%d.%m %H:%M") }}</div>
+          </div>
+          <div class="chips">
+            <span class="chip">{{ r.status }}</span>
+            <a class="chip" href="{{ r.hh_url }}" target="_blank">Открыть</a>
+          </div>
+        </div>
+      {% else %}
+        <div class="muted">Пока нет откликов.</div>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top:12px;">
+      <a class="btn ghost" href="/student/profile">Назад в профиль</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

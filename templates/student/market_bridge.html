@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Мост с рынком — VECTOR{% endblock %}
+{% block content %}
+<section class="st-wrap">
+  <div class="st-card">
+    <div class="st-head">
+      <h2>Мост с рынком труда</h2>
+      <p class="muted">Требования HH → твой Skill Gap → что прокачать</p>
+    </div>
+
+    <form method="get" class="st-form" style="margin-top:12px;">
+      <label>Роль</label>
+      <select name="q">
+        {% for r in roles %}
+          <option value="{{ r }}" {% if r==q %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn primary" style="margin-top:10px;">Показать</button>
+    </form>
+
+    <div class="st-box" style="margin-top:14px;">
+      <b>Топ требований по HH</b>
+      <div class="chips" style="margin-top:10px;">
+        {% for s in gap.top_market[:16] %}
+          <span class="chip">{{ s }}</span>
+        {% else %}
+          <span class="muted">Нет данных по навыкам.</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+      <div class="st-box">
+        <b>У тебя уже есть</b>
+        <div class="chips" style="margin-top:10px;">
+          {% for s in gap.have %}
+            <span class="chip">{{ s }}</span>
+          {% else %}
+            <span class="muted">Пока пусто</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="st-box">
+        <b>Чего не хватает (приоритет)</b>
+        <div class="chips" style="margin-top:10px;">
+          {% for s in gap.missing %}
+            <span class="chip">{{ s }}</span>
+          {% else %}
+            <span class="muted">Почти всё есть — круто!</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <a class="btn ghost" href="/student/profile">Назад в профиль</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

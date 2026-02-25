@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Result — VECTOR AI{% endblock %}
+
+{% block content %}
+<section class="st-wrap">
+  <div class="st-card">
+
+    <div class="st-head">
+      <h2>Твой Skill-DNA</h2>
+      <p class="muted">{{ profile.full_name }}</p>
+    </div>
+
+    <div class="grid2">
+
+      <!-- Personality -->
+      <div class="box">
+        <h3>Тип личности (16)</h3>
+        <div class="badge badge-accent">{{ analysis.personality_type }}</div>
+        <p class="muted">{{ analysis.personality_short }}</p>
+      </div>
+
+      <!-- Roles -->
+      <div class="box">
+        <h3>Рекомендованные роли</h3>
+
+        <div class="chips">
+          {% for p in (analysis.top_roles or []) %}
+            <span class="chip-item">{{ p }}</span>
+          {% endfor %}
+
+          {% if not (analysis.top_roles or []) %}
+            <span class="muted">Нет данных</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Soft skills -->
+      <div class="box">
+        <h3>Top soft skills</h3>
+
+        <div class="skill-list">
+          {% for s in (analysis.soft_skills or []) %}
+            <div class="skill-item">
+              <div class="skill-top">
+                <span class="skill-name">{{ s.name }}</span>
+                <span class="skill-score" data-score="{{ s.score }}">0%</span>
+              </div>
+              <div class="skill-bar">
+                <div class="skill-fill" data-score="{{ s.score }}"></div>
+              </div>
+            </div>
+          {% endfor %}
+
+          {% if not (analysis.soft_skills or []) %}
+            <span class="muted">Нет данных</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Hard skills -->
+      <div class="box">
+        <h3>Top hard skills</h3>
+
+        <div class="skill-list">
+          {% for s in (analysis.hard_skills or []) %}
+            <div class="skill-item">
+              <div class="skill-top">
+                <span class="skill-name">{{ s.name }}</span>
+                <span class="skill-score" data-score="{{ s.score }}">0%</span>
+              </div>
+              <div class="skill-bar">
+                <div class="skill-fill" data-score="{{ s.score }}"></div>
+              </div>
+            </div>
+          {% endfor %}
+
+          {% if not (analysis.hard_skills or []) %}
+            <span class="muted">Нет данных</span>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Learning plan -->
+    <div class="box plan">
+      <h3>План развития</h3>
+
+      <div class="plan-grid">
+        {% for x in (analysis.learning_plan or []) %}
+          <div class="plan-item">
+            <div class="plan-head">
+              <span class="plan-skill">{{ x.skill }}</span>
+              <span class="plan-tag">Next</span>
+            </div>
+
+            <div class="plan-step">{{ x.next_step }}</div>
+            <div class="plan-why muted">{{ x.why }}</div>
+          </div>
+        {% endfor %}
+
+        {% if not (analysis.learning_plan or []) %}
+          <span class="muted">Нет данных</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="st-actions">
+      <a class="btn primary" href="/student/vacancies">Смотреть вакансии (HH)</a>
+      <a class="btn ghost" href="/student/onboarding">Изменить предпочтения</a>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const items = document.querySelectorAll(".skill-item");
+
+    items.forEach((item, i) => {
+      const bar = item.querySelector(".skill-fill");
+      const label = item.querySelector(".skill-score");
+      if (!bar || !label) return;
+
+      const target = parseInt(bar.dataset.score, 10) || 0;
+
+      // 🎨 цвет прогресса
+      if (target < 50) bar.classList.add("low");
+      else if (target < 75) bar.classList.add("medium");
+      else bar.classList.add("high");
+
+      // старт
+      bar.style.width = "0%";
+      label.textContent = "0%";
+
+      // задержка по очереди
+      setTimeout(() => {
+        // линия
+        bar.style.width = target + "%";
+
+        // цифры
+        const duration = 900;
+        const start = performance.now();
+
+        function animate(now) {
+          const progress = Math.min((now - start) / duration, 1);
+          const value = Math.round(progress * target);
+          label.textContent = value + "%";
+          if (progress < 1) requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
+      }, 200 + i * 140);
+    });
+  });
+</script>
+{% endblock %}

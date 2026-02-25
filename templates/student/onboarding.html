@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Onboarding — VECTOR AI{% endblock %}
+
+{% block content %}
+<section class="ob-wrap onboarding-fix">
+
+  <div class="ob-hero">
+
+    <div class="ob-card">
+
+      <!-- Left: main -->
+      <div class="ob-main">
+
+        <div class="ob-head">
+          <h1 class="ob-title">Быстрый старт <span class="ob-emoji">🚀</span></h1>
+          <p class="ob-sub">Заполни короткую анкету — и начни AI-интервью.</p>
+
+          <div class="ob-progress" aria-label="progress">
+            <div class="ob-progress-fill" style="width: 28%;"></div>
+          </div>
+        </div>
+
+        <form method="post" class="ob-form" id="obForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <!-- Name -->
+          <div class="ob-field">
+            <label class="ob-label">Имя <span class="ob-hint">✦</span></label>
+            <div class="ob-inputwrap">
+              <input class="ob-input" name="full_name" value="{{ profile.full_name or '' }}"
+                     placeholder="Напр: Иманали" required>
+              <span class="ob-ok" aria-hidden="true">✓</span>
+            </div>
+          </div>
+
+          <!-- Row: region + remote -->
+          <div class="ob-row">
+            <div class="ob-field">
+              <label class="ob-label">Город / регион</label>
+              <div class="ob-inputwrap ob-inputwrap-icon">
+                <span class="ob-icon">📍</span>
+                <input class="ob-input" name="region" value="{{ profile.region or 'Алматы' }}" placeholder="Алматы">
+                <span class="ob-caret" aria-hidden="true">▾</span>
+              </div>
+            </div>
+
+            <div class="ob-field">
+              <label class="ob-label">Удалёнка</label>
+              <label class="ob-toggle">
+                <input type="checkbox" name="remote" {% if profile.remote %}checked{% endif %}>
+                <span class="ob-switch" aria-hidden="true"></span>
+                <span class="ob-toggle-text">Рассматриваю удалёнку</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Roles chips -->
+          <div class="ob-field">
+            <label class="ob-label">Что интересно (1–3 роли)</label>
+
+            <!-- chips container -->
+            <div class="ob-chips" id="chips">
+              <!-- chips will render here -->
+              <button class="ob-chip ob-chip-add" type="button" id="chipAddBtn">+ Добавить</button>
+            </div>
+
+            <div class="ob-help">Например: Барбер, Маркетолог, Дизайнер</div>
+
+            <!-- IMPORTANT: this is the backend field -->
+            <input class="ob-input ob-input-hidden" id="rolesInput"
+                   name="roles"
+                   value="{{ (profile.roles or [])|join(', ') }}"
+                   placeholder="Барбер, SMM, Data Analyst...">
+          </div>
+
+          {# скрытые дефолты, чтобы твой backend не ломался #}
+          <input type="hidden" name="city" value="{{ profile.city or '' }}">
+          <input type="hidden" name="college" value="{{ profile.college or '' }}">
+          <input type="hidden" name="speciality" value="{{ profile.speciality or '' }}">
+          <input type="hidden" name="start_year" value="{{ profile.start_year or '' }}">
+          <input type="hidden" name="job_intent" value="{{ profile.job_intent or 'maybe' }}">
+          <input type="hidden" name="notify" value="">
+
+          <!-- CTA -->
+          <button class="ob-cta" type="submit">
+            <span class="ob-cta-ico">✈</span>
+            Начать AI-интервью <span class="ob-cta-arr">→</span>
+          </button>
+
+          <!-- meta row -->
+          <div class="ob-meta">
+            <div class="ob-meta-left">✓ Остальные данные ИИ уточнит в диалоге</div>
+            <div class="ob-meta-right">
+              <span class="ob-pill"><span class="ob-pill-ico">🛡</span> Безопасно</span>
+              <span class="ob-pill"><span class="ob-pill-ico">⏱</span> ~2 мин</span>
+              <span class="ob-pill"><span class="ob-pill-ico">🤖</span> Умный подбор</span>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Right: showcase (no photos) -->
+      <aside class="ob-side" aria-hidden="true">
+        <div class="ob-side-glow"></div>
+
+        <div class="ob-float ob-f1">
+          <div class="ob-float-card">
+            <div class="ob-float-thumb"></div>
+            <div class="ob-float-lines">
+              <div class="l1"></div><div class="l2"></div><div class="l3"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ob-float ob-f2">
+          <div class="ob-float-card big">
+            <div class="ob-avatar"></div>
+            <div class="ob-float-lines">
+              <div class="l1"></div><div class="l2"></div><div class="l3"></div>
+            </div>
+            <div class="ob-badge">❤</div>
+          </div>
+        </div>
+
+        <div class="ob-float ob-f3">
+          <div class="ob-float-card">
+            <div class="ob-float-thumb alt"></div>
+            <div class="ob-float-lines">
+              <div class="l1"></div><div class="l2"></div><div class="l3"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ob-spark s1"></div>
+        <div class="ob-spark s2"></div>
+        <div class="ob-spark s3"></div>
+      </aside>
+
+    </div>
+
+    <!-- bottom tiles like in mock -->
+    <div class="ob-tiles">
+      <div class="ob-tile">
+        <div class="ob-tile-ico">💬</div>
+        <div>
+          <div class="ob-tile-title">AI-интервью</div>
+          <div class="ob-tile-sub">Умные вопросы</div>
+        </div>
+      </div>
+
+      <div class="ob-tile">
+        <div class="ob-tile-ico">🧩</div>
+        <div>
+          <div class="ob-tile-title">Подбор вакансий</div>
+          <div class="ob-tile-sub">Под твои цели</div>
+        </div>
+      </div>
+
+      <div class="ob-tile">
+        <div class="ob-tile-ico">⚡</div>
+        <div>
+          <div class="ob-tile-title">Быстрый старт</div>
+          <div class="ob-tile-sub">30 секунд</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+(function(){
+  const rolesInput = document.getElementById('rolesInput');
+  const chips = document.getElementById('chips');
+  const addBtn = document.getElementById('chipAddBtn');
+
+  function normalize(s){
+    return (s || '').trim().replace(/\s+/g,' ');
+  }
+
+  function parseRoles(){
+    const raw = rolesInput.value || '';
+    return raw.split(',').map(x => normalize(x)).filter(Boolean);
+  }
+
+  function setRoles(arr){
+    rolesInput.value = arr.join(', ');
+  }
+
+  function render(){
+    const roles = parseRoles().slice(0, 3);
+
+    // remove existing chips (except add button)
+    [...chips.querySelectorAll('.ob-chip:not(.ob-chip-add)')].forEach(n => n.remove());
+
+    roles.forEach((r, idx) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'ob-chip';
+      chip.innerHTML = `<span class="t">${escapeHtml(r)}</span><span class="x">×</span>`;
+      chip.addEventListener('click', () => {
+        const now = parseRoles().filter(x => x !== r);
+        setRoles(now);
+        render();
+      });
+      chips.insertBefore(chip, addBtn);
+    });
+
+    // disable add when 3
+    addBtn.disabled = roles.length >= 3;
+  }
+
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, (m) => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
+  addBtn.addEventListener('click', () => {
+    const roles = parseRoles();
+    if (roles.length >= 3) return;
+
+    const val = prompt('Добавь роль (например: SMM / Data Analyst / Барбер)');
+    const v = normalize(val);
+    if (!v) return;
+
+    // avoid duplicates
+    if (roles.map(x => x.toLowerCase()).includes(v.toLowerCase())) return;
+
+    roles.push(v);
+    setRoles(roles);
+    render();
+  });
+
+  // init: if rolesInput has text — render chips
+  render();
+})();
+</script>
+{% endblock %}
